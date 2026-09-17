@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  待下发文件表 send_file_info 的 SQL 映射。
+  说明：SQL 未在原始资料中完整捕获，以下按接口方法还原骨架，需对照原工程校验。
+-->
+<mapper namespace="com.transfer.medical.mapper.MedicalSendFileInformationMapper">
+
+    <resultMap id="BaseResultMap" type="com.transfer.medical.pojo.MedicalSendFileInformation">
+        <result column="unit_name" property="unitName"/>
+        <result column="send_date" property="sendDate"/>
+        <result column="file_path" property="filePath"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_num" property="fileNum"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="send_flag" property="sendFlag"/>
+        <result column="send_times" property="sendTimes"/>
+        <result column="sys_code" property="sysCode"/>
+        <result column="file_bytes" property="fileBytes"/>
+        <result column="data_num" property="dataNum"/>
+    </resultMap>
+
+    <select id="selectPendingPush" resultMap="BaseResultMap">
+        select * from send_file_info where send_flag = '0'
+    </select>
+
+    <update id="updatePushStatus">
+        update send_file_info
+        <set>
+            <if test="sendFlag != null">send_flag = #{sendFlag},</if>
+        </set>
+        where file_name = #{fileName}
+    </update>
+
+</mapper>

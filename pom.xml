@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.transfer.psbcx</groupId>
-    <artifactId>com-batch-transfer</artifactId>
-    <version>company_three-SNAPSHOT</version>
+    <groupId>com.transfer.medical</groupId>
+    <artifactId>medical-data-transfer</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -103,7 +103,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- 本地依赖：Transfer / 消息客户端等 jar，位于 src/main/lib -->
+        <!-- 本地依赖：Medical / 消息客户端等 jar，位于 src/main/lib -->
         <dependency>
             <groupId>com.nantian</groupId>
             <artifactId>cpds_eftp</artifactId>
@@ -121,7 +121,7 @@
     </dependencies>
 
     <build>
-        <finalName>com-batch-transfer-company_three-SNAPSHOT</finalName>
+        <finalName>medical-data-transfer-1.0.0-SNAPSHOT</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

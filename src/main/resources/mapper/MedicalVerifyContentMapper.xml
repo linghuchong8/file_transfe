@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  校验文件明细表 verf_content 的 SQL 映射。
+  说明：SQL 未在原始资料中完整捕获，以下按接口方法还原骨架，需对照原工程校验。
+-->
+<mapper namespace="com.transfer.medical.mapper.MedicalVerifyContentMapper">
+
+    <resultMap id="BaseResultMap" type="com.transfer.medical.pojo.MedicalVerifyContent">
+        <result column="file_name" property="fileName"/>
+        <result column="unit_name" property="unitName"/>
+        <result column="byte_num" property="byteMum"/>
+        <result column="record_count" property="recordCount"/>
+        <result column="datestr" property="datestr"/>
+        <result column="timestr" property="timestr"/>
+    </resultMap>
+
+    <insert id="insertDetail" parameterType="com.transfer.medical.pojo.MedicalVerifyContent">
+        insert into verf_content (file_name, unit_name, byte_num, record_count, datestr, timestr)
+        values (#{fileName}, #{unitName}, #{byteMum}, #{recordCount}, #{datestr}, #{timestr})
+    </insert>
+
+    <select id="countDetailByUnitDate" resultType="java.lang.Integer">
+        select count(1) from verf_content
+        where unit_name = #{unitName} and datestr = #{datestr} and timestr = #{timestr}
+    </select>
+
+</mapper>

@@ -43,7 +43,7 @@
     <!--</appender>-->
 
 
-    <logger name="com.transfer.psbcx.mapper" level="debug" additivity="true">
+    <logger name="com.transfer.medical.mapper" level="debug" additivity="true">
         <appender-ref ref="debugAppender"/>
         <!--<appender-ref ref="errorAppender"/>-->
     </logger>

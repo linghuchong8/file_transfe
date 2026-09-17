@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  校验策略配置表 verf_config 的 SQL 映射。
+  说明：SQL 未在原始资料中完整捕获，以下按接口方法还原骨架，需对照原工程校验。
+-->
+<mapper namespace="com.transfer.medical.mapper.MedicalVerifyConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.transfer.medical.pojo.MedicalVerifyConfig">
+        <result column="service_name" property="serviceName"/>
+        <result column="send_sys_code" property="sendSysCode"/>
+        <result column="verf_type" property="verfType"/>
+        <result column="many_num" property="manyNum"/>
+    </resultMap>
+
+    <select id="selectVerfStrategies" resultMap="BaseResultMap">
+        select * from verf_config where verf_type = 'verf'
+    </select>
+
+    <select id="selectFileNumStrategies" resultMap="BaseResultMap">
+        select * from verf_config where verf_type = 'filenum'
+    </select>
+
+    <select id="selectManyStrategies" resultMap="BaseResultMap">
+        select * from verf_config where verf_type = 'many'
+    </select>
+
+</mapper>
