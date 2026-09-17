@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <property name="log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5level [%t] ::: %logger %-4L ---> %msg%n" />
+    <property name="log.base.filepath" value="./logs/"/>
+    <property name="log.maxHistory" value="365"/>
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="debugAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.base.filepath}/log.out</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log.base.filepath}/log.%d{yyyy-MM-dd}.out.gz</fileNamePattern>
+            <maxHistory>${log.maxHistory}</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+            <totalSizeCap>30GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!--<appender name="errorAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+        <!--<file>${log.base.filepath}/error/error.log</file>-->
+        <!--<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+            <!--<fileNamePattern>${log.base.filepath}/error/error.%d{yyyy-MM-dd}.log</fileNamePattern>-->
+            <!--<maxHistory>${log.maxHistory}</maxHistory>-->
+        <!--</rollingPolicy>-->
+        <!--<encoder>-->
+            <!--<pattern>${log.pattern}</pattern>-->
+            <!--<charset>UTF-8</charset>-->
+        <!--</encoder>-->
+        <!--<filter class="ch.qos.logback.classic.filter.LevelFilter">-->
+            <!--<level>ERROR</level>-->
+            <!--<onMatch>ACCEPT</onMatch>-->
+            <!--<onMismatch>DENY</onMismatch>-->
+        <!--</filter>-->
+    <!--</appender>-->
+
+
+    <logger name="com.transfer.psbcx.mapper" level="debug" additivity="true">
+        <appender-ref ref="debugAppender"/>
+        <!--<appender-ref ref="errorAppender"/>-->
+    </logger>
+
+    <root level="info">
+        <appender-ref ref="debugAppender"/>
+        <appender-ref ref="consoleAppender"/>
+    </root>
+</configuration>

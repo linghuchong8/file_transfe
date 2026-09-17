@@ -1,0 +1,29 @@
+package com.transfer.psbcx.task;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
+
+/**
+ * 线程池运行状态监控任务。
+ */
+@Component
+@EnableScheduling
+@Slf4j
+public class TransferMonitorJob implements TransferJob {
+
+    private final ThreadPoolTaskExecutor taskExecutor;
+
+    public TransferMonitorJob(ThreadPoolTaskExecutor taskExecutor) {
+        this.taskExecutor = taskExecutor;
+    }
+
+    @Scheduled(initialDelayString = "${scheduled.task.monitor.initialDelay}",
+            fixedRateString = "${scheduled.task.monitor.fixedRate}")
+    @Override
+    public synchronized void run() {
+        log.info("线程池状态: {}", taskExecutor.getThreadPoolExecutor());
+    }
+}

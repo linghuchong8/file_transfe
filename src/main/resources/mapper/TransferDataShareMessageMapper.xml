@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  共享消息表 pm_data_share_msg 的 SQL 映射。
+  说明：SQL 未在原始资料中完整捕获，以下按接口方法还原骨架，表名/字段/条件需对照原工程校验。
+-->
+<mapper namespace="com.transfer.psbcx.mapper.TransferDataShareMessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.transfer.psbcx.pojo.TransferDataShareMessage">
+        <result column="service_name" property="serviceName"/>
+        <result column="file_dir" property="fileDir"/>
+        <result column="send_sys_code" property="sendSysCode"/>
+        <result column="file_name" property="fileName"/>
+        <result column="unit_name" property="unitName"/>
+        <result column="tx_date" property="txDate"/>
+        <result column="process_flag" property="processFlag"/>
+        <result column="create_date" property="createDate"/>
+        <result column="create_time" property="createTime"/>
+        <result column="down_flag" property="downFlag"/>
+        <result column="file_num" property="fileNum"/>
+        <result column="send_hdfs_flag" property="sendHdfsFlag"/>
+        <result column="send_hdfs_path" property="sendHdfsPath"/>
+        <result column="is_done" property="isDone"/>
+        <result column="file_type" property="fileType"/>
+        <result column="log_msg" property="logMsg"/>
+        <result column="restart_times" property="restartTimes"/>
+        <result column="file_id" property="fileId"/>
+    </resultMap>
+
+    <select id="queryByCondition" resultMap="BaseResultMap">
+        select * from pm_data_share_msg
+        <where>
+            <if test="unitName != null and unitName != ''">and unit_name = #{unitName}</if>
+            <if test="txDate != null and txDate != ''">and tx_date = #{txDate}</if>
+        </where>
+    </select>
+
+    <delete id="removeMessage">
+        delete from pm_data_share_msg
+        <where>
+            <if test="fileName != null and fileName != ''">and file_name = #{fileName}</if>
+            <if test="unitName != null and unitName != ''">and unit_name = #{unitName}</if>
+        </where>
+    </delete>
+
+    <select id="selectFileCode" resultType="java.lang.String">
+        select file_code from pm_data_share_msg where unit_name = #{unitName} limit 1
+    </select>
+
+    <select id="selectSpecialFile" resultType="java.lang.String">
+        select file_name from pm_data_share_msg where unit_name = #{unitName} limit 1
+    </select>
+
+    <select id="countFileName" resultType="java.lang.Integer">
+        select count(1) from pm_data_share_msg where file_name = #{fileName}
+    </select>
+
+    <select id="countMessages" resultType="java.lang.Integer">
+        select count(1) from pm_data_share_msg
+    </select>
+
+    <select id="countDistinctFileId" resultType="java.lang.Integer">
+        select count(distinct file_id) from pm_data_share_msg
+        where unit_name = #{unitName} and tx_date = #{txDate}
+    </select>
+
+    <select id="countProbeFlag" resultType="java.lang.Integer">
+        select count(1) from pm_data_share_msg where is_done = 3
+    </select>
+
+    <select id="selectFileId" resultType="java.lang.String">
+        select file_id from pm_data_share_msg
+        where unit_name = #{unitName} and file_name = #{fileName} limit 1
+    </select>
+
+    <insert id="insertMessage" parameterType="com.transfer.psbcx.pojo.TransferDataShareMessage">
+        insert into pm_data_share_msg
+        (service_name, file_dir, send_sys_code, file_name, unit_name, tx_date, process_flag,
+         create_date, create_time, down_flag, file_num, send_hdfs_flag, send_hdfs_path, is_done, file_type, file_id)
+        values
+        (#{serviceName}, #{fileDir}, #{sendSysCode}, #{fileName}, #{unitName}, #{txDate}, #{processFlag},
+         #{createDate}, #{createTime}, #{downFlag}, #{fileNum}, #{sendHdfsFlag}, #{sendHdfsPath}, #{isDone}, #{fileType}, #{fileId})
+    </insert>
+
+    <update id="updateMessage">
+        update pm_data_share_msg
+        <set>
+            <if test="logMsg != null">log_msg = #{logMsg},</if>
+            <if test="downFlag != null">down_flag = #{downFlag},</if>
+            <if test="processFlag != null">process_flag = #{processFlag},</if>
+            <if test="isDone != null">is_done = #{isDone},</if>
+        </set>
+        where file_name = #{fileName}
+        <if test="fileDir != null and fileDir != ''">and file_dir = #{fileDir}</if>
+    </update>
+
+    <update id="claimProcessFlag">
+        update pm_data_share_msg set process_flag = #{processFlag}, log_msg = #{logMsg}
+        where file_name = #{fileName} and process_flag = #{oldFlag}
+    </update>
+
+    <update id="updateDoneByUnitDate">
+        update pm_data_share_msg set is_done = #{isDone}, log_msg = #{logMsg}
+        where unit_name = #{unitName} and tx_date = #{txDate}
+    </update>
+
+    <update id="updateVerifyDoneByUnitDate">
+        update pm_data_share_msg set is_done = #{isDone}
+        where unit_name = #{unitName} and tx_date = #{txDate} and file_type = '00'
+    </update>
+
+    <update id="updateVerifyMessage">
+        update pm_data_share_msg
+        <set>
+            <if test="logMsg != null">log_msg = #{logMsg},</if>
+            <if test="downFlag != null">down_flag = #{downFlag},</if>
+            <if test="fileDesc != null">file_desc = #{fileDesc},</if>
+            <if test="fileNum != null">file_num = #{fileNum},</if>
+        </set>
+        where file_name = #{fileName}
+        <if test="unitName != null and unitName != ''">and unit_name = #{unitName}</if>
+        <if test="txDate != null and txDate != ''">and tx_date = #{txDate}</if>
+        <if test="fileType != null and fileType != ''">and file_type = #{fileType}</if>
+    </update>
+
+    <select id="selectPendingDownload" resultMap="BaseResultMap">
+        select * from pm_data_share_msg where down_flag = '0'
+    </select>
+
+    <select id="selectPendingProcess" resultMap="BaseResultMap">
+        select * from pm_data_share_msg where process_flag = '0'
+    </select>
+
+    <select id="selectPendingHdfs" resultMap="BaseResultMap">
+        select * from pm_data_share_msg where send_hdfs_flag = '0'
+    </select>
+
+    <select id="selectReceiveSummary" resultMap="BaseResultMap">
+        select unit_name, tx_date, count(1) as count
+        from pm_data_share_msg
+        where is_done = 0
+        group by unit_name, tx_date
+    </select>
+
+    <select id="countByUnitDate" resultType="java.lang.Integer">
+        select count(1) from pm_data_share_msg where unit_name = #{unitName} and tx_date = #{txDate}
+    </select>
+
+    <update id="resetAllDone">
+        update pm_data_share_msg set is_done = 0
+    </update>
+
+    <update id="resetAllDownFlag">
+        update pm_data_share_msg set down_flag = '0'
+    </update>
+
+    <select id="countProcessedByUnitDate" resultType="java.lang.Integer">
+        select count(1) from pm_data_share_msg
+        where unit_name = #{unitName} and tx_date = #{txDate} and process_flag = '2'
+    </select>
+
+    <select id="selectUnverifiedByUnitDate" resultMap="BaseResultMap">
+        select * from pm_data_share_msg
+        where unit_name = #{unitName} and tx_date = #{txDate} and file_type = '00' and is_done = 0
+    </select>
+
+    <select id="sumHeaderFileNum" resultType="java.lang.Integer">
+        select sum(file_num) from pm_data_share_msg
+        where unit_name = #{unitName} and tx_date = #{txDate}
+    </select>
+
+    <update id="resetVerifyDone">
+        update pm_data_share_msg set is_done = 0 where file_type = '00'
+    </update>
+
+    <update id="resetVerifyDownFlag">
+        update pm_data_share_msg set process_flag = '0' where file_type = '00'
+    </update>
+
+</mapper>
