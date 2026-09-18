@@ -117,4 +117,85 @@ MedicalCheckIsDoneJob ──► 判断文件是否收齐（is_done）
 
 ### 5. 收齐校验 `MedicalCheckIsDoneJob`
 
-按 `unit_name + tx_
+按 `unit_name + tx_date` 分组判断文件是否接收完成，支持三种策略：
+
+1. **固定数量**（`MedicalVerifyConfigMapper.selectManyStrategies`）：每个分发日固定次数，达到即完成；否则在配置的零点时间兜底置完成。
+2. **verf 文件校验**（`selectVerfStrategies`）：用 verf 文件登记的子文件数量与实际入库数量比对。
+3. **消息头文件数校验**（`selectFileNumStrategies`）：用消息头 `file_num` 之和比对。
+- 校验通过后把该批次记录 `is_done` 置为已完成，并更新 verf 记录的校验状态。
+
+### 6. 文件下发 `MedicalPushJob` / `MedicalRestActionService.push`
+
+- 查询待下发记录（`MedicalSendFileInformationMapper.selectPendingPush`），置为下发中。
+- 从 HDFS 取回文件到本地临时目录，组装上传报文（含接口名、日期、增量标识等），
+  调用医疗数据交换客户端 `uploadFile` 接口完成下发。
+- 下发结束删除本地临时文件；失败时累加发送次数并置错误状态。
+
+### 7. 其他任务
+
+| 任务 | 功能 |
+| --- | --- |
+| `MedicalTryJob` | 定时重置下载/处理/上传失败状态（`resetAllDone`、`resetVerifyDone`），便于重试 |
+| `MedicalCleanUpJob` | 按 `delete.local.data.interval` 删除历史日期目录，释放磁盘 |
+| `MedicalMonitorJob` | 打印线程池运行状态，便于监控 |
+| `MedicalCheckListJob` | 探测 EDB 客户端插件名称/版本/状态（定时调度默认关闭） |
+| `MedicalDownVerifyFileJob` | verf/check 文件下载入口（当前逻辑处于注释保留状态） |
+
+### 8. REST 接口 `MedicalRestController`
+
+| 路径 | 方法 | 说明 |
+| --- | --- | --- |
+| `/transfer/list` | GET | 按条件查询 `pm_data_share_msg` 列表 |
+| `/transfer/deleteMsg` | POST | 按条件删除消息记录 |
+
+## 五、高可用与异常恢复
+
+- `MedicalRunner` 根据 `is.need.ha` 判断是否启用 HA：
+  - 启用时通过 ZooKeeper 选举主节点，仅主节点执行 `MedicalServiceApp` 启动逻辑；
+  - 与 ZK 连接异常（LOST）时退出进程，避免多主节点同时运行。
+- 应用启动完成后（`ApplicationRunner`）调用 `resetAllDownFlag` / `resetVerifyDownFlag`，
+  将异常中间态复位，保证主备切换后任务可继续。
+
+## 六、关键数据对象与数据表
+
+| POJO | 对应表 | 说明 |
+| --- | --- | --- |
+| `MedicalDataShareMessage` | `pm_data_share_msg` | 接收到的文件消息及下载/处理/HDFS/完成状态 |
+| `MedicalVerifyConfig` | `verf_config` | 校验策略配置（verf / filenum / many） |
+| `MedicalVerifyContent` | `verf_content` | verf 文件解析出的子文件清单（字节数、记录数） |
+| `MedicalSendFileInformation` | `send_file_info` | 待下发文件信息及下发状态 |
+| `MedicalDownloadFileRequest` | — | 文件下载请求参数 |
+| `MedicalDownloadFileResponse` | — | 文件下载响应 |
+
+文件类型枚举 `MedicalDataFileCategory`：`VERF("00")`、`CHECK("01")`、`DATA("02")`。
+
+完成标志枚举 `MedicalDoneFlag`：未完成 `0`、已完成 `1`、忽略 `2`、已触发 `3`、verf 已校验 `4`。
+
+处理状态常量接口 `MedicalFlowStatus`：就绪 `01`、完成 `00`、运行中 `02`、错误 `03`、无需处理 `04`。
+
+## 七、配置文件说明
+
+| 文件 | 说明 |
+| --- | --- |
+| `resources/application.properties` | Spring Boot 配置：数据源、EDB 接口地址、线程池、定时任务周期 |
+| `resources/config.properties` | 业务配置：下载目录、HDFS 前缀、ZooKeeper、接口映射等（`MedicalAppPropertiesUtil` 读取） |
+| `resources/cpdsmsgj2.properties` | 医疗数据交换消息连接配置 |
+| `resources/transfer_app_config.properties` | 医疗数据传输服务配置 |
+| `resources/logback.xml` | 日志配置 |
+| `resources/mapper/*.xml` | MyBatis SQL 映射（与 Mapper 接口一一对应） |
+
+常用可调项：
+
+- `data.share.download.dir.prefix`：本地下载根目录
+- `task.upload.local.path.prefix` / `task.process.hdfs.path.prefix`：HDFS 路径前缀
+- `scheduled.task.*`：各定时任务的初始延迟与执行周期
+- `spring.task.execution.*` / `spring.task.scheduling.*`：线程池与调度线程配置
+- `is.need.ha`、`zookeeper.*`：高可用开关与 ZK 参数
+- `interface.filepath.filecode.map`、`interface.filename.syscode.map`：文件编码与发送方系统码映射
+
+## 八、部署启动
+
+1. 使用 Maven 打包生成 `medical-data-transfer-1.0.0-SNAPSHOT.jar`；
+2. 上传至服务器 `/app/app` 目录；
+3. 执行 `./transfer_service.sh start` 启动，`stop` / `status` / `restart` 分别用于停止、查看状态、重启；
+4. 启动脚本通过 crontab 注册守护任务，实现进程异常退出后的自动拉起。
